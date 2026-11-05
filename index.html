@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>个人简历</title>
+    <!-- 引入 CDN 上的资源 -->
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+    <script src="https://unpkg.com/vue@2/dist/vue.js"></script>
+    <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+    <script src="https://unpkg.com/crypto-js@4.1.1/crypto-js.js"></script>
+    <script src="https://unpkg.com/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <script src="https://unpkg.com/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+            background-color: #f5f5f5; color: #1a1a1a; line-height: 1.7;
+            -webkit-font-smoothing: antialiased; padding-bottom: 80px;
+        }
+        .resume-container { max-width: 820px; margin: 0 auto; background: #ffffff; box-shadow: 0 0 20px rgba(0, 0, 0, 0.08); }
+        .header { padding: 50px 60px 40px; border-bottom: 3px solid #1a1a1a; }
+        .header-top { display: flex; justify-content: space-between; align-items: flex-start; }
+        .name-section h1 { font-size: 36px; font-weight: 700; letter-spacing: 4px; color: #1a1a1a; margin-bottom: 8px; }
+        .name-section .title { font-size: 16px; color: #666; font-weight: 400; letter-spacing: 2px; }
+        .status-badge { display: inline-block; padding: 6px 16px; border: 2px solid #2563eb; color: #2563eb; font-size: 13px; font-weight: 600; letter-spacing: 1px; margin-top: 18px; }
+        .expect-section { text-align: right; }
+        .expect-section .label { font-size: 12px; color: #999; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+        .expect-section .value { font-size: 15px; color: #333; font-weight: 500; }
+        .contact-bar { display: flex; flex-wrap: wrap; gap: 24px; padding: 20px 60px; background: #fafafa; border-bottom: 1px solid #eee; }
+        .contact-item { display: flex; align-items: center; gap: 8px; font-size: 18px; font-family: monospace, consolas; color: #555; }
+        .contact-item .icon { width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; color: #2563eb; font-weight: bold; font-size: 15px; }
+        .contact-note { padding: 12px 60px; background: #fafafa; border-bottom: 1px solid #eee; font-size: 12px; color: #888; line-height: 1.8; }
+        .contact-note a { color: #2563eb; text-decoration: none; font-weight: 500; }
+        .main-content { padding: 40px 60px 60px; }
+        .section { margin-bottom: 40px; }
+        .section:last-child { margin-bottom: 0; }
+        .section-title { font-size: 18px; font-weight: 700; color: #1a1a1a; padding-bottom: 12px; margin-bottom: 24px; border-bottom: 2px solid #1a1a1a; display: flex; align-items: center; gap: 10px; letter-spacing: 2px; }
+        .section-title::before { content: ""; width: 4px; height: 18px; background: #2563eb; display: inline-block; }
+        .timeline-item { position: relative; padding-left: 20px; margin-bottom: 28px; border-left: 2px solid #e0e0e0; }
+        .timeline-item:last-child { margin-bottom: 0; }
+        .timeline-item::before { content: ""; position: absolute; left: -5px; top: 8px; width: 8px; height: 8px; background: #2563eb; border-radius: 50%; }
+        .timeline-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+        .timeline-header .org { font-size: 15px; font-weight: 600; color: #1a1a1a; }
+        .timeline-header .date { font-size: 12px; color: #999; font-weight: 400; white-space: nowrap; }
+        .timeline-role { font-size: 13px; color: #2563eb; font-weight: 500; margin-bottom: 8px; }
+        .timeline-desc { font-size: 13px; color: #555; line-height: 1.8; }
+        .timeline-desc ul { list-style: none; padding: 0; }
+        .timeline-desc ul li { position: relative; padding-left: 14px; margin-bottom: 4px; }
+        .timeline-desc ul li::before { content: "·"; position: absolute; left: 0; color: #2563eb; font-weight: bold; font-size: 16px; }
+        .project-item { padding: 20px 24px; border: 1px solid #eee; margin-bottom: 20px; transition: border-color 0.2s; }
+        .project-item:last-child { margin-bottom: 0; }
+        .project-item:hover { border-color: #2563eb; }
+        .project-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+        .project-name { font-size: 15px; font-weight: 600; color: #1a1a1a; }
+        .project-date { font-size: 12px; color: #999; }
+        .project-tech { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+        .tech-tag { padding: 2px 10px; background: #f0f0f0; color: #555; font-size: 11px; border-radius: 2px; letter-spacing: 0.5px; }
+        .skills-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px 40px; }
+        .skill-item { display: flex; align-items: center; justify-content: space-between; }
+        .skill-name { font-size: 13px; color: #333; font-weight: 500; }
+        .skill-stars { font-size: 16px; letter-spacing: 3px; color: #e0e0e0; }
+        .skill-stars .filled { color: #1a1a1a; }
+        .floating-actions { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); display: flex; gap: 16px; z-index: 1000; background: #fff; padding: 12px 20px; border-radius: 50px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12); border: 1px solid #eee; }
+        .floating-actions button { padding: 8px 24px; background: #1a1a1a; color: #fff; border: none; font-size: 13px; font-weight: 500; cursor: pointer; border-radius: 20px; transition: all 0.2s; letter-spacing: 1px; }
+        .floating-actions button:hover { background: #2563eb; transform: translateY(-1px); }
+        .footer { padding: 20px 60px; text-align: center; font-size: 11px; color: #999; border-top: 1px solid #f0f0f0; background: #fafafa; }
+        .footer a { color: #2563eb; text-decoration: none; font-weight: 500; }
+        
+        /* 验证失败提示样式 */
+        .failed-container { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; color: #999; font-size: 18px; letter-spacing: 2px;}
+        .failed-container i { font-size: 60px; margin-bottom: 20px; color: #ccc; }
+
+        .copyrightInfo { position: fixed; bottom:0; right: 0; width: 280px; padding: 0 10px 10px; opacity: 0.3; pointer-events: none; z-index: 3000; }
+        .copyrightInfo:hover { opacity: 0.8; }
+        .copyrightInfo p { font-size: 10px; color: #666; text-align: right; line-height: 1.4; margin: 0; }
+        .copyrightInfo a { color: #666; text-decoration: none; pointer-events: auto; }
+
+        .pageDescBox { width: calc(100% - 60px); max-width: 600px; position: fixed; top: 30px; left: 30px; padding: 40px; background: #fff; box-shadow: 0 0 20px rgba(0, 0, 0, 0.08); border-radius: 8px; }
+        .pageDescBox h2 { font-size: 24px; font-weight: 700; color: #1a1a1a; margin-bottom: 20px; }
+        .pageDescBox ul { list-style: disc; padding-left: 20px; }
+        .pageDescBox ul li { font-size: 14px; color: #555; line-height: 1.8; margin-bottom: 8px; }
+        .pageDescBox ul li a { color: #2563eb; text-decoration: none; font-weight: 500; }
+
+        @media print {
+            body { background: #fff; padding-bottom: 0; }
+            .resume-container { box-shadow: none; max-width: 100%; }
+            .floating-actions { display: none !important; }
+            .project-item:hover { border-color: #eee; }
+        }
+        @media (max-width: 600px) {
+            .header { padding: 30px 24px 24px; }
+            .contact-bar, .contact-note { padding: 16px 24px; }
+            .main-content { padding: 24px; }
+            .header-top { flex-direction: column; gap: 16px; }
+            .expect-section { text-align: left; }
+            .skills-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <!-- 权限验证弹窗 -->
+        <el-dialog title="访问权限验证" :visible.sync="dialogVisible" :close-on-click-modal="false" :show-close="false" width="420px" custom-class="auth-dialog">
+            <div style="margin-bottom: 20px; color: #606266; font-size: 14px;">请填写简历上求职者的电子邮箱地址</div>
+            <el-input v-model="email" placeholder="请输入邮箱地址" placeholder="hr@example.com" clearable @keyup.enter.native="handleSubmit"></el-input>
+            <span slot="footer" class="dialog-footer">
+                <el-button @click="handleCancel">取 消</el-button>
+                <el-button type="primary" @click="handleSubmit" :loading="loading">确 定</el-button>
+            </span>
+        </el-dialog>
+
+        <!-- 简历内容区 (验证通过后显示) -->
+        <div class="resume-container" id="resume" v-if="isAuthenticated">
+            <div class="header">
+                <div class="header-top">
+                    <div class="name-section">
+                        <h1>{{ resumeData.basic.name }}</h1>
+                        <div class="title">{{ resumeData.basic.title }}</div>
+                    </div>
+                    <div class="expect-section">
+                        <div class="label">求职期望</div>
+                        <div class="value">{{ resumeData.basic.expect.position }}</div>
+                        <div class="value" style="margin-top:4px;font-size:13px;color:#666;">{{ resumeData.basic.expect.city }} · {{ resumeData.basic.expect.type }}</div>
+                    </div>
+                </div>
+                <div class="status-badge">{{ resumeData.basic.description }}</div>
+            </div>
+
+            <div class="contact-bar">
+                <div class="contact-item" title="电话"><span class="icon">☎</span><span>{{ resumeData.contact.phone }}</span></div>
+                <div class="contact-item" title="邮箱"><span class="icon">✉</span><span>{{ resumeData.contact.email }}</span></div>
+            </div>
+            <div class="contact-note">
+                <div>微信、QQ、钉钉等平台请使用手机号添加好友，并备注招聘相关信息</div>
+            </div>
+            <div class="contact-note">
+                <div>本简历的网页版本及源码请访问 <a :href="resumeData.siteUrl" target="_blank">{{ resumeData.siteName }}</a></div>
+            </div>
+
+            <div class="main-content">
+                <!-- 专业技能 -->
+                <div class="section">
+                    <div class="section-title">专业技能</div>
+                    <div class="skills-grid">
+                        <div class="skill-item" v-for="(skill, index) in resumeData.skills" :key="'skill-'+index">
+                            <span class="skill-name">{{ skill.name }}</span>
+                            <span class="skill-stars">
+                                <span v-for="i in 5" :key="i" :class="{ filled: i <= Math.round(skill.level / 20) }">★</span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 工作经历 -->
+                <div class="section" v-if="resumeData.work && resumeData.work.length > 0">
+                    <div class="section-title">工作经历</div>
+                    <div class="timeline-item" v-for="(work, index) in resumeData.work" :key="'work-'+index">
+                        <div class="timeline-header">
+                            <span class="org">{{ work.company }}</span>
+                            <span class="date">{{ work.date }}</span>
+                        </div>
+                        <div class="timeline-role">{{ work.role }}</div>
+                        <div class="timeline-desc">
+                            <ul><li v-for="(desc, i) in work.desc" :key="i">{{ desc }}</li></ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 教育 & 培训经历 -->
+                <div class="section" v-if="allEducation && allEducation.length > 0">
+                    <div class="section-title">教育 & 培训经历</div>
+                    <div class="timeline-item" v-for="(edu, index) in allEducation" :key="'edu-'+index">
+                        <div class="timeline-header">
+                            <span class="org">{{ edu.school }}</span>
+                            <span class="date">{{ edu.date }}</span>
+                        </div>
+                        <div class="timeline-role">{{ edu.degree }}</div>
+                        <div class="timeline-desc">{{ edu.desc }}</div>
+                    </div>
+                </div>
+
+                <!-- 项目经历 -->
+                <div class="section" v-if="resumeData.projects && resumeData.projects.length > 0">
+                    <div class="section-title">项目经历</div>
+                    <div class="project-item" v-for="(proj, index) in resumeData.projects" :key="'proj-'+index">
+                        <div class="project-header">
+                            <span class="project-name">{{ proj.name }}</span>
+                            <span class="project-date">{{ proj.date }}</span>
+                        </div>
+                        <div class="timeline-role" style="margin-bottom: 10px;">{{ proj.role }}</div>
+                        <div class="project-tech">
+                            <span class="tech-tag" v-for="(tech, i) in proj.tech" :key="i">{{ tech }}</span>
+                        </div>
+                        <div class="timeline-desc">
+                            <ul><li v-for="(desc, i) in proj.desc" :key="i">{{ desc }}</li></ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="footer">
+                本简历的网页版本及源码请访问 <a :href="resumeData.siteUrl" target="_blank">{{ resumeData.siteName }}</a> · 最后更新于 {{ resumeData.lastUpdated }}
+            </div>
+        </div>
+        <div v-else class="pageDescBox">
+            <h2>简单的个人简历项目</h2>
+            <ul>
+                <li>本项目是一个简单的个人简历网页展示项目，使用 Vue 2 + Element UI 构建，支持导出 PDF 和图片格式。</li>
+                <li>请在弹窗中输入简历上求职者的电子邮箱地址以验证您是否有权限查看该简历。</li>
+                <li>个人简历数据在回答正确电子邮件地址前完全加密，确保信息安全。</li>
+                <li>完全静态页面，不需要后端服务！</li>
+                <li>项目源码托管在 <a href="https://github.com/dr490n/resume" target="_blank">GitHub</a> 上。欢迎 star 或者通过Issues提交反馈！</li>
+            </ul>
+        </div>
+
+        <!-- 导出操作按钮 -->
+        <div class="floating-actions" v-if="isAuthenticated">
+            <button @click="saveAsPDF">保存为 PDF</button>
+            <button @click="saveAsImage">保存为图片</button>
+            <button @click="gotoGitHub">查看项目源码</button>
+        </div>
+
+        <!-- 验证失败提示 -->
+        <div class="failed-container" v-if="isFailed">
+            <i class="el-icon-lock"></i>
+            <span>未匹配到简历信息</span>
+        </div>
+    </div>
+    <div class="copyrightInfo">
+        <p>&copy; Licensed under the MIT License.</p>
+        <p>You can fork the project on <a href="https://github.com/dr490n/resume" target="_blank">GitHub</a>.</p>
+        <p>Issues and feedback are welcome!</p>
+    </div>
+
+    <script>
+        new Vue({
+            el: '#app',
+            data() {
+                return {
+                    dialogVisible: true,
+                    email: '',
+                    loading: false,
+                    isAuthenticated: false,
+                    isFailed: false,
+                    resumeData: {},
+                    emailRegex: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
+                };
+            },
+            computed: {
+                allEducation() {
+                    return [...(this.resumeData.education || []), ...(this.resumeData.training || [])];
+                }
+            },
+            methods: {
+                handleCancel() {
+                    this.dialogVisible = false;
+                    this.isFailed = true;
+                },
+                async handleSubmit() {
+                    if (!this.email.trim()) {
+                        this.$message.warning('请输入邮箱地址');
+                        return;
+                    }
+                    if (!this.emailRegex.test(this.email)) {
+                        this.$message.error('请按正确格式填写邮箱地址');
+                        return;
+                    }
+
+                    this.loading = true;
+                    try {
+                        // 1. 计算 MD5 和 SHA1
+                        const md5Hex = CryptoJS.MD5(this.email).toString();
+                        const sha1Hex = CryptoJS.SHA1(this.email).toString();
+
+                        // 2. 请求加密的 JSON 文件
+                        const response = await fetch(`/resume/${md5Hex}.json`);
+                        if (!response.ok) throw new Error('File not found');
+                        const jsonData = await response.json();
+
+                        // 3. 3DES 解密逻辑
+                        // Key: SHA1 (20 bytes) -> 补齐至 24 bytes (48 hex chars) 以满足 3DES 要求
+                        const keyHex = sha1Hex + sha1Hex.substring(0, 8);
+                        const key = CryptoJS.enc.Hex.parse(keyHex);
+
+                        // IV: MD5 逆序后的前 16 个 hex 字符 (8 bytes)
+                        const ivHex = md5Hex.split('').reverse().join('').substring(0, 16);
+                        const iv = CryptoJS.enc.Hex.parse(ivHex);
+
+                        const decrypted = CryptoJS.TripleDES.decrypt(jsonData.data, key, {
+                            iv: iv,
+                            mode: CryptoJS.mode.CBC,
+                            padding: CryptoJS.pad.Pkcs7
+                        });
+                        
+                        const decryptedStr = decrypted.toString(CryptoJS.enc.Utf8);
+                        if (!decryptedStr) throw new Error('Decryption failed');
+                        
+                        const resumeData = this.resumeData = JSON.parse(decryptedStr);
+                        this.dialogVisible = false;
+                        this.isAuthenticated = true;
+                        window.document.title = `${resumeData.title} - 个人简历`;
+                    } catch (error) {
+                        console.error('验证失败:', error);
+                        this.dialogVisible = false;
+                        this.isFailed = true;
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+                async saveAsImage() {
+                    const canvas = await html2canvas(document.getElementById('resume'), { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
+                    const link = document.createElement('a');
+                    link.download = `简历_${this.resumeData.basic.name}.png`;
+                    link.href = canvas.toDataURL('image/png');
+                    link.click();
+                },
+                async saveAsPDF() {
+                    const canvas = await html2canvas(document.getElementById('resume'), { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
+                    const imgData = canvas.toDataURL('image/png');
+                    const { jsPDF } = window.jspdf;
+                    const pdf = new jsPDF({ orientation: 'portrait', unit: 'px', format: [canvas.width, canvas.height] });
+                    pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+                    pdf.save(`简历_${this.resumeData.basic.name}.pdf`);
+                },
+                gotoGitHub() {
+                    window.open('https://github.com/dr490n/resume', '_blank');
+                }
+            }
+        });
+    </script>
+</body>
+</html>
