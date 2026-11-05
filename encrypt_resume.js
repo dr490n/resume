@@ -3,12 +3,58 @@ const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 
-// 获取命令行传入的邮箱参数
-const targetEmail = process.argv[2];
+function printUsage() {
+    console.error('❌ 用法: node encrypt_resume.js <目标邮箱地址> [--file <path>]');
+    console.error('   例如: node encrypt_resume.js hr@company.com');
+    console.error('   例如: node encrypt_resume.js --file ./resume_data.json hr@company.com');
+    console.error('   例如: node encrypt_resume.js hr@company.com --file /absolute/path/to/resume_data.json');
+}
+
+const args = process.argv.slice(2);
+let targetEmail = '';
+let inputFile = path.join(__dirname, 'resume_data.json');
+
+for (let i = 0; i < args.length; i++) {
+    const arg = args[i];
+
+    if (arg === '--help' || arg === '-h') {
+        printUsage();
+        process.exit(0);
+    }
+
+    if (arg === '--file') {
+        const nextArg = args[i + 1];
+        if (!nextArg || nextArg.startsWith('-')) {
+            console.error('❌ 缺少 --file 参数值');
+            printUsage();
+            process.exit(1);
+        }
+        inputFile = nextArg;
+        i += 1;
+        continue;
+    }
+
+    if (arg.startsWith('--file=')) {
+        inputFile = arg.substring('--file='.length);
+        continue;
+    }
+
+    if (!targetEmail && !arg.startsWith('-')) {
+        targetEmail = arg;
+    }
+}
 
 if (!targetEmail) {
-    console.error('❌ 用法: node encrypt_resume.js <目标邮箱地址>');
-    console.error('例如: node encrypt_resume.js hr@company.com');
+    printUsage();
+    process.exit(1);
+}
+
+const rawDataPath = path.isAbsolute(inputFile)
+    ? inputFile
+    : path.resolve(process.cwd(), inputFile);
+
+if (!fs.existsSync(rawDataPath)) {
+    console.error(`❌ 找不到指定数据文件: ${inputFile}`);
     process.exit(1);
 }
 
@@ -26,11 +72,6 @@ const ivHex = md5Hex.split('').reverse().join('').substring(0, 16);
 const ivBuffer = Buffer.from(ivHex, 'hex');
 
 // 3. 读取原始简历 JSON 数据
-const rawDataPath = path.join(__dirname, 'resume_data.json');
-if (!fs.existsSync(rawDataPath)) {
-    console.error('❌ 找不到原始数据文件: resume_data.json，请先创建该文件');
-    process.exit(1);
-}
 const rawData = fs.readFileSync(rawDataPath, 'utf8');
 
 // 4. 使用 3DES-CBC 加密并进行 Base64 编码
@@ -49,5 +90,6 @@ fs.writeFileSync(outputFile, JSON.stringify({ data: encrypted }, null, 2));
 
 console.log('✅ 加密成功！');
 console.log(`📁 目标邮箱: ${targetEmail}`);
+console.log(`📄 源文件: ${rawDataPath}`);
 console.log(`🔑 MD5 (文件名): ${md5Hex}`);
 console.log(`🔒 文件已保存至: ${outputFile}`);

@@ -2,6 +2,10 @@
 
 这是一个纯前端的个人简历展示项目，采用 Vue 2 + Element UI 构建，支持简历信息加密展示、访问校验、PDF/图片导出等功能。
 
+[DEMO](https://chenglong.fj.cn) 作为演示可以输入 `hr@example.com` 查看到 `resume_data.json` 里面信息的显示效果。
+
+此项目的页面样式和部分功能实现使用了AI辅助（阿里千问），但整个方案是自己写的……防止别有用心之人在文件中查到AI水印。
+
 ## 功能概览
 
 - 个人信息、求职期望、工作经历、项目经历、教育经历等内容展示
@@ -45,11 +49,22 @@ resume/
 
 ### 2. 生成加密数据
 
-使用脚本为用指定邮箱地址生成对应的加密文件保存到 `resume/` 目录下：
+使用脚本为指定邮箱地址生成对应的加密文件保存到 `resume/` 目录下：
 
 ```bash
+# 默认：自动读取 resume_data.json
 node encrypt_resume.js hr@example.com
+
+# 指定自定义源文件（相对路径）
+node encrypt_resume.js hr@example.com --file ./resume_data.json
+
+# 指定自定义源文件（绝对路径）
+node encrypt_resume.js hr@example.com --file /path/to/resume_data.json
 ```
+
+如果没有传入 `--file` 参数，脚本会默认读取当前项目根目录下的 `resume_data.json`。
+
+用这个加密方案，你可以用多个不同的邮箱生成多份内容不同的简历。
 
 ### 3. 架设网站
 
@@ -66,13 +81,26 @@ node encrypt_resume.js hr@example.com
 ### 命令格式
 
 ```bash
-node encrypt_resume.js <目标邮箱地址>
+node encrypt_resume.js <目标邮箱地址> [--file <path>]
 ```
+
+其中：
+
+- `--file` 可选参数：指定需要加密的 JSON 文件
+- 不传 `--file` 时，默认使用 `resume_data.json`
+- `path` 支持相对路径与绝对路径
 
 ### 示例
 
 ```bash
+# 默认加密 resume_data.json
 node encrypt_resume.js hr@company.com
+
+# 使用相对路径
+node encrypt_resume.js hr@company.com --file ./my_resume.json
+
+# 使用绝对路径
+node encrypt_resume.js hr@company.com --file /Users/username/project/my_resume.json
 ```
 
 ### 生成结果
@@ -118,3 +146,7 @@ node encrypt_resume.js hr@company.com
 - 招聘筛选专用页面
 - 加密版简历分享
 - 公司内部候选人资料展示
+
+## License
+
+Licensed under the MIT License.
